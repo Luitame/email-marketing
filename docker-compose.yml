@@ -1,10 +1,23 @@
 version: "2"
 
+volumes:
+  
+  mongodb-data:
+    driver: local
+
 services:
 
-  node:
-    container_name: node
-    image: node:8.6.0
+  mongodb:
+    container_name: mongodb
+    image: mongo:3.4.9
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+
+  nodejs:
+    container_name: nodejs
+    image: node:8.6.0-alpine
     user: node
     working_dir: /home/node/app
     environment:
@@ -14,3 +27,5 @@ services:
     ports:
       - "3000:3000"
     command: "npm start"
+    links:
+      - mongodb
