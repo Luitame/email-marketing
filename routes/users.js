@@ -1,5 +1,6 @@
 let express = require('express');
 let router = express.Router();
+let passport = require('./../src/auth/auth');
 let User = require('./../src/models/user');
 
 /* GET users listing. */
@@ -7,7 +8,7 @@ router.get('/', function (req, res, next) {
   res.send('respond with a resource');
 });
 
-router.get('/me', function (req, res, next) {
+router.get('/me', passport.authenticate('jwt'), function (req, res, next) {
   let callback = function (err, user) {
     if (err) {
       return res.status(500).json({err: err});
@@ -18,9 +19,8 @@ router.get('/me', function (req, res, next) {
     }
 
     return res.status(200).json({user: user});
-  }
-
-  User.findById('5a98adf1198355045096490e', callback);
+  };
+  User.findById('5a9b2c21aa8b9700bbec8d7c', callback);
 });
 
 router.post('/register', function (req, res, next) {
