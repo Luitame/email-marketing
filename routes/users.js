@@ -1,26 +1,40 @@
 let express = require('express');
 let router = express.Router();
+let jwt = require('jwt-simple');
 let passport = require('./../src/auth/auth');
 let User = require('./../src/models/user');
+let cfg = require('./../config');
 
-/* GET users listing. */
-router.get('/', function (req, res, next) {
-  res.send('respond with a resource');
-});
+router.post('/token', function (req, res, next) {
+  let user = req.body;
 
-router.get('/me', passport.authenticate('jwt'), function (req, res, next) {
+  if (!user.username || !user.password) {
+    return res.status(401).send('Unauthorized!');
+  }
+
+  let query = {name: user.username, password: user.password};
+
   let callback = function (err, user) {
     if (err) {
-      return res.status(500).json({err: err});
+      return err;
     }
-
-    if (!user) {
-      return res.status(404).json({user: 'Page not found'});
-    }
-
-    return res.status(200).json({user: user});
+    return user;
   };
-  User.findById('5a9b2c21aa8b9700bbec8d7c', callback);
+
+  user = User.findOne(query, callback);
+
+  if (!user) {
+    return res.status(401).send('Unauthorized!');
+  }
+
+  let payload = {id: user.id};
+  let token = jwt.encode(payload, cfg.jwtSecret);
+
+  return res.status(200).json({token: token});
+});
+
+router.get('/me', passport.authenticate('jwt', {session: false}), function (req, res, next) {
+  return res.status(200).json({user: req.user});
 });
 
 router.post('/register', function (req, res, next) {
@@ -34,14 +48,12 @@ router.post('/register', function (req, res, next) {
       enabled: true
     }]
   };
-
   let callback = function (err, user) {
     if (err) {
       return res.status(422).json({err: err});
     }
     return res.status(200).json({user: user});
-  }
-
+  };
   User.create(data, callback);
 });
 
