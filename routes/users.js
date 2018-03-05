@@ -9,28 +9,26 @@ router.post('/token', function (req, res, next) {
   let user = req.body;
 
   if (!user.username || !user.password) {
-    return res.status(401).send('Unauthorized!');
+    return res.status(401).send('Unauthorized');
   }
 
-  let query = {name: user.username, password: user.password};
+  let query = {email: user.username, password: user.password};
 
   let callback = function (err, user) {
     if (err) {
-      return err;
+      return res.status(500).json({err: err});
     }
-    return user;
-  };
 
-  user = User.findOne(query, callback);
+    if (!user) {
+      return res.status(401).send('Unauthorized');
+    }
 
-  if (!user) {
-    return res.status(401).send('Unauthorized!');
+    let payload = {id: user.id};
+    let token = jwt.encode(payload, cfg.jwtSecret);
+    return res.json({token: token});
   }
 
-  let payload = {id: user.id};
-  let token = jwt.encode(payload, cfg.jwtSecret);
-
-  return res.status(200).json({token: token});
+  user = User.findOne(query, callback);
 });
 
 router.get('/me', passport.authenticate('jwt', {session: false}), function (req, res, next) {
